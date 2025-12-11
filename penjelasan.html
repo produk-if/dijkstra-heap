@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fibonacci Search - OpenMP &amp; Cilk</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --code-bg: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: var(--gray);
+            font-size: 1.2em;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin: 5px;
+        }
+        
+        .badge-openmp { background: #dbeafe; color: #1d4ed8; }
+        .badge-cilk { background: #dcfce7; color: #166534; }
+        .badge-c { background: #fef3c7; color: #92400e; }
+        
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .card-number {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-right: 15px;
+        }
+        
+        .card-title {
+            font-size: 1.5em;
+            color: var(--dark);
+        }
+        
+        /* Formula Box */
+        .formula-box {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+            color: white;
+            text-align: center;
+        }
+        
+        .formula-box .formula {
+            font-size: 1.8em;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            color: #fbbf24;
+        }
+        
+        .formula-box .label {
+            color: #94a3b8;
+            font-size: 0.9em;
+        }
+        
+        /* Fibonacci Sequence */
+        .fib-sequence {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .fib-item {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-weight: bold;
+            text-align: center;
+            min-width: 80px;
+        }
+        
+        .fib-item .index {
+            font-size: 0.75em;
+            opacity: 0.8;
+        }
+        
+        .fib-item .value {
+            font-size: 1.2em;
+        }
+        
+        /* Calculation Steps */
+        .calc-steps {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .calc-step {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        
+        .calc-step:last-child {
+            border-bottom: none;
+        }
+        
+        .calc-step .step-formula {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: var(--dark);
+        }
+        
+        .calc-step .step-result {
+            margin-left: auto;
+            background: var(--secondary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        /* Code Block */
+        .code-block {
+            background: var(--code-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .code-header {
+            background: #1e293b;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+        
+        .code-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .code-dot.red { background: #ef4444; }
+        .code-dot.yellow { background: #eab308; }
+        .code-dot.green { background: #22c55e; }
+        
+        .code-title {
+            color: #94a3b8;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+        
+        .code-content {
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        .code-content pre {
+            margin: 0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+        
+        .code-content .keyword { color: #c084fc; }
+        .code-content .function { color: #60a5fa; }
+        .code-content .number { color: #fbbf24; }
+        .code-content .comment { color: #6b7280; }
+        .code-content .string { color: #34d399; }
+        .code-content .type { color: #f472b6; }
+        .code-content .pragma { color: #fb923c; }
+        
+        /* Search Demo */
+        .search-demo {
+            margin: 20px 0;
+        }
+        
+        .array-visual {
+            display: flex;
+            gap: 5px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .array-item {
+            width: 50px;
+            height: 60px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .array-item .idx {
+            font-size: 0.7em;
+            color: var(--gray);
+        }
+        
+        .array-item .val {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        .array-item.highlight {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.1);
+        }
+        
+        .array-item.found {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.15);
+        }
+        
+        .array-item.checked {
+            background: #fef3c7;
+            border-color: #f59e0b;
+        }
+        
+        /* Search Steps */
+        .search-steps {
+            margin: 20px 0;
+        }
+        
+        .search-step {
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            padding: 15px 20px;
+            margin: 10px 0;
+            border-radius: 0 12px 12px 0;
+        }
+        
+        .search-step.found {
+            border-left-color: var(--secondary);
+            background: #dcfce7;
+        }
+        
+        .search-step-num {
+            background: var(--primary);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .search-step.found .search-step-num {
+            background: var(--secondary);
+        }
+        
+        /* Result Table */
+        .result-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 20px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .result-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .result-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+        }
+        
+        .result-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .result-table tr:hover td {
+            background: #f8fafc;
+        }
+        
+        .speedup-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        
+        .speedup-badge.baseline {
+            background: #94a3b8;
+        }
+        
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .info-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        }
+        
+        /* Comparison */
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .comparison-item h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .comparison-item.openmp {
+            border: 2px solid #2563eb;
+        }
+        
+        .comparison-item.cilk {
+            border: 2px solid #10b981;
+        }
+        
+        /* Tree Visualization */
+        .tree-visual {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+        
+        .tree-node {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        .tree-parallel {
+            color: var(--secondary);
+            font-size: 0.85em;
+        }
+        
+        /* Conclusion */
+        .conclusion-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .conclusion-item {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .conclusion-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+        }
+        
+        .conclusion-content h4 {
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+        
+        .conclusion-content p {
+            color: var(--gray);
+            font-size: 0.9em;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8em; }
+            .comparison { grid-template-columns: 1fr; }
+            .conclusion-grid { grid-template-columns: 1fr; }
+            .array-visual { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>🔍 Fibonacci Search</h1>
+        <p class="subtitle">Studi Kasus: Pencarian Data pada Array Besar</p>
+        <div style="margin-top: 15px;">
+            <span class="badge badge-c">Bahasa C</span>
+            <span class="badge badge-openmp">OpenMP</span>
+            <span class="badge badge-cilk">Cilk-style</span>
+        </div>
+    </div>
+
+    <!-- Section 1: Deret Fibonacci -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">1</div>
+            <h2 class="card-title">Deret Fibonacci Murni</h2>
+        </div>
+        
+        <div class="formula-box">
+            <div class="label">RUMUS FIBONACCI</div>
+            <div class="formula">F(n) = F(n-1) + F(n-2)</div>
+            <div class="label">dengan F(0) = 0 dan F(1) = 1</div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">📊 Deret Fibonacci (Hasil Eksekusi Program)</h3>
+        <div class="fib-sequence">
+            <div class="fib-item"><div class="index">F(0)</div><div class="value">0</div></div>
+            <div class="fib-item"><div class="index">F(1)</div><div class="value">1</div></div>
+            <div class="fib-item"><div class="index">F(2)</div><div class="value">1</div></div>
+            <div class="fib-item"><div class="index">F(3)</div><div class="value">2</div></div>
+            <div class="fib-item"><div class="index">F(4)</div><div class="value">3</div></div>
+            <div class="fib-item"><div class="index">F(5)</div><div class="value">5</div></div>
+            <div class="fib-item"><div class="index">F(6)</div><div class="value">8</div></div>
+            <div class="fib-item"><div class="index">F(7)</div><div class="value">13</div></div>
+            <div class="fib-item"><div class="index">F(8)</div><div class="value">21</div></div>
+            <div class="fib-item"><div class="index">F(9)</div><div class="value">34</div></div>
+            <div class="fib-item"><div class="index">F(10)</div><div class="value">55</div></div>
+            <div class="fib-item"><div class="index">F(11)</div><div class="value">89</div></div>
+            <div class="fib-item"><div class="index">F(12)</div><div class="value">144</div></div>
+            <div class="fib-item"><div class="index">F(13)</div><div class="value">233</div></div>
+            <div class="fib-item"><div class="index">F(14)</div><div class="value">377</div></div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">📝 Cara Menghitung</h3>
+        <div class="calc-steps">
+            <div class="calc-step">
+                <span class="step-formula">F(2) = F(1) + F(0) = 1 + 0</span>
+                <span class="step-result">= 1</span>
+            </div>
+            <div class="calc-step">
+                <span class="step-formula">F(3) = F(2) + F(1) = 1 + 1</span>
+                <span class="step-result">= 2</span>
+            </div>
+            <div class="calc-step">
+                <span class="step-formula">F(4) = F(3) + F(2) = 2 + 1</span>
+                <span class="step-result">= 3</span>
+            </div>
+            <div class="calc-step">
+                <span class="step-formula">F(5) = F(4) + F(3) = 3 + 2</span>
+                <span class="step-result">= 5</span>
+            </div>
+            <div class="calc-step">
+                <span class="step-formula">F(6) = F(5) + F(4) = 5 + 3</span>
+                <span class="step-result">= 8</span>
+            </div>
+            <div class="calc-step">
+                <span class="step-formula">F(7) = F(6) + F(5) = 8 + 5</span>
+                <span class="step-result">= 13</span>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">💻 Kode Program</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">generate_fibonacci.c</span>
+            </div>
+            <div class="code-content">
+<pre><span class="comment">// Global array untuk menyimpan deret Fibonacci</span>
+<span class="type">long long</span> fib[<span class="number">50</span>];
+
+<span class="type">void</span> <span class="function">generate_fibonacci</span>(<span class="type">int</span> n) {
+    fib[<span class="number">0</span>] = <span class="number">0</span>;    <span class="comment">// F(0) = 0</span>
+    fib[<span class="number">1</span>] = <span class="number">1</span>;    <span class="comment">// F(1) = 1</span>
+    
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">2</span>; i < n; i++) {
+        fib[i] = fib[i-<span class="number">1</span>] + fib[i-<span class="number">2</span>];  <span class="comment">// RUMUS FIBONACCI!</span>
+    }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Fibonacci Search -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">2</div>
+            <h2 class="card-title">Algoritma Fibonacci Search</h2>
+        </div>
+        
+        <div class="info-box">
+            <span class="info-icon">💡</span>
+            <div>
+                <strong>Apa itu Fibonacci Search?</strong><br>
+                Algoritma pencarian pada <strong>array terurut</strong> yang menggunakan deret Fibonacci untuk menentukan posisi pembagian (bukan bagi 2 seperti Binary Search).
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">🆚 Perbandingan dengan Binary Search</h3>
+        <table class="result-table">
+            <tr>
+                <th>Aspek</th>
+                <th>Binary Search</th>
+                <th>Fibonacci Search</th>
+            </tr>
+            <tr>
+                <td>Pembagian Array</td>
+                <td>50% - 50%</td>
+                <td>~62% - 38% (Golden Ratio)</td>
+            </tr>
+            <tr>
+                <td>Operasi Matematika</td>
+                <td>Perlu division (/)</td>
+                <td><strong>Hanya + dan -</strong></td>
+            </tr>
+            <tr>
+                <td>Kompleksitas</td>
+                <td>O(log n)</td>
+                <td>O(log n)</td>
+            </tr>
+        </table>
+        
+        <h3 style="margin: 20px 0 10px;">🔍 Demo Pencarian (Hasil Eksekusi Program)</h3>
+        <div class="search-demo">
+            <div class="info-box success-box">
+                <span class="info-icon">📋</span>
+                <div>
+                    <strong>Array:</strong> [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22]<br>
+                    <strong>Panjang:</strong> 11 elemen<br>
+                    <strong>Target:</strong> 14
+                </div>
+            </div>
+            
+            <h4 style="margin: 15px 0;">Visualisasi Array:</h4>
+            <div class="array-visual">
+                <div class="array-item"><div class="idx">0</div><div class="val">2</div></div>
+                <div class="array-item"><div class="idx">1</div><div class="val">4</div></div>
+                <div class="array-item"><div class="idx">2</div><div class="val">6</div></div>
+                <div class="array-item"><div class="idx">3</div><div class="val">8</div></div>
+                <div class="array-item checked"><div class="idx">4</div><div class="val">10</div></div>
+                <div class="array-item checked"><div class="idx">5</div><div class="val">12</div></div>
+                <div class="array-item found"><div class="idx">6</div><div class="val">14</div></div>
+                <div class="array-item checked"><div class="idx">7</div><div class="val">16</div></div>
+                <div class="array-item"><div class="idx">8</div><div class="val">18</div></div>
+                <div class="array-item"><div class="idx">9</div><div class="val">20</div></div>
+                <div class="array-item"><div class="idx">10</div><div class="val">22</div></div>
+            </div>
+            <p style="font-size: 0.85em; color: var(--gray); margin-top: 10px;">
+                🟡 = diperiksa &nbsp; 🟢 = ditemukan
+            </p>
+        </div>
+        
+        <h4 style="margin: 20px 0 10px;">📋 Langkah-Langkah Pencarian:</h4>
+        <div class="search-steps">
+            <div class="search-step">
+                <span class="search-step-num">1</span>
+                <strong>Cari F(k) ≥ 11:</strong> F(7) = 13 ≥ 11 ✓<br>
+                <span style="color: var(--gray);">k = 7, F(k-2) = F(5) = 5</span>
+            </div>
+            <div class="search-step">
+                <span class="search-step-num">2</span>
+                <strong>index = -1 + 5 = 4:</strong> arr[4] = 10<br>
+                <span style="color: var(--gray);">10 < 14 → geser KANAN, offset = 4</span>
+            </div>
+            <div class="search-step">
+                <span class="search-step-num">3</span>
+                <strong>index = 4 + 3 = 7:</strong> arr[7] = 16<br>
+                <span style="color: var(--gray);">16 > 14 → geser KIRI</span>
+            </div>
+            <div class="search-step">
+                <span class="search-step-num">4</span>
+                <strong>index = 4 + 1 = 5:</strong> arr[5] = 12<br>
+                <span style="color: var(--gray);">12 < 14 → geser KANAN, offset = 5</span>
+            </div>
+            <div class="search-step found">
+                <span class="search-step-num">5</span>
+                <strong>index = 5 + 1 = 6:</strong> arr[6] = 14<br>
+                <span style="color: #166534;">14 == 14 → <strong>KETEMU di index 6!</strong> ✓</span>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">💻 Kode Program</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">fibonacci_search.c</span>
+            </div>
+            <div class="code-content">
+<pre><span class="type">int</span> <span class="function">fibonacci_search</span>(<span class="type">int</span> arr[], <span class="type">int</span> n, <span class="type">int</span> target) {
+    <span class="comment">// Cari F(k) >= n</span>
+    <span class="type">int</span> k = <span class="number">0</span>;
+    <span class="keyword">while</span> (fib[k] < n) k++;
+    
+    <span class="type">int</span> offset = -<span class="number">1</span>;
+    
+    <span class="keyword">while</span> (k > <span class="number">1</span>) {
+        <span class="type">int</span> i = offset + fib[k-<span class="number">2</span>];
+        <span class="keyword">if</span> (i >= n) i = n - <span class="number">1</span>;
+        
+        <span class="keyword">if</span> (arr[i] < target) {
+            <span class="comment">// Target di KANAN</span>
+            k = k - <span class="number">1</span>;
+            offset = i;
+        }
+        <span class="keyword">else if</span> (arr[i] > target) {
+            <span class="comment">// Target di KIRI</span>
+            k = k - <span class="number">2</span>;
+        }
+        <span class="keyword">else</span> {
+            <span class="comment">// KETEMU!</span>
+            <span class="keyword">return</span> i;
+        }
+    }
+    
+    <span class="keyword">return</span> -<span class="number">1</span>;  <span class="comment">// Tidak ditemukan</span>
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: OpenMP -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">3</div>
+            <h2 class="card-title">Parallelisasi dengan OpenMP</h2>
+        </div>
+        
+        <div class="info-box">
+            <span class="info-icon">⚡</span>
+            <div>
+                <strong>OpenMP</strong> menggunakan <code>#pragma</code> directive untuk membagi pekerjaan ke beberapa thread secara otomatis.
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">🔄 Serial vs Parallel</h3>
+        <div class="comparison">
+            <div class="comparison-item">
+                <h4>❌ Serial (Lambat)</h4>
+                <p>Pencarian dilakukan <strong>satu per satu</strong></p>
+                <pre style="text-align: left; background: #f1f5f9; padding: 10px; border-radius: 8px; margin-top: 10px;">Search 1 → Search 2 → Search 3 → ...</pre>
+            </div>
+            <div class="comparison-item openmp">
+                <h4>✅ OpenMP (Cepat)</h4>
+                <p>Pencarian dilakukan <strong>bersamaan</strong></p>
+                <pre style="text-align: left; background: #dbeafe; padding: 10px; border-radius: 8px; margin-top: 10px;">Thread 1: Search 1, 5, 9...
+Thread 2: Search 2, 6, 10...
+Thread 3: Search 3, 7, 11...
+Thread 4: Search 4, 8, 12...</pre>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">💻 Kode Program</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">batch_search_openmp.c</span>
+            </div>
+            <div class="code-content">
+<pre><span class="type">void</span> <span class="function">batch_search_openmp</span>(<span class="type">int</span> arr[], <span class="type">int</span> n, 
+                         <span class="type">int</span> targets[], <span class="type">int</span> num_targets, 
+                         <span class="type">int</span> results[]) {
+    
+    <span class="pragma">#pragma omp parallel for</span>
+    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i < num_targets; i++) {
+        results[i] = <span class="function">fibonacci_search</span>(arr, n, targets[i]);
+    }
+}
+
+<span class="comment">/*
+ * #pragma omp parallel for:
+ * - Membagi loop ke beberapa thread
+ * - Setiap thread cari target berbeda
+ * - Tidak perlu sinkronisasi (hasil di index berbeda)
+ */</span></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Cilk -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">4</div>
+            <h2 class="card-title">Parallelisasi dengan Cilk</h2>
+        </div>
+        
+        <div class="info-box">
+            <span class="info-icon">🔀</span>
+            <div>
+                <strong>Cilk</strong> menggunakan model <strong>task-based parallelism</strong> dengan konsep <code>spawn</code> (buat task) dan <code>sync</code> (tunggu selesai).
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">🌳 Fibonacci Rekursif - Contoh Klasik Cilk</h3>
+        <div class="formula-box">
+            <div class="label">KONSEP CILK</div>
+            <div class="formula">F(n) = F(n-1) + F(n-2)</div>
+            <div class="formula" style="font-size: 1.2em;">= [TASK 1] + [TASK 2]</div>
+            <div class="label">Kedua task INDEPENDEN, bisa dijalankan PARALEL!</div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">🌲 Visualisasi Tree F(5)</h3>
+        <div class="tree-visual">
+<pre>
+                    <span class="tree-node">F(5)</span>
+                   /    \
+              <span class="tree-node">F(4)</span>  +   <span class="tree-node">F(3)</span>        <span class="tree-parallel">← 2 task paralel</span>
+              / \        / \
+          <span class="tree-node">F(3)</span>+<span class="tree-node">F(2)</span>  <span class="tree-node">F(2)</span>+<span class="tree-node">F(1)</span>      <span class="tree-parallel">← 4 task paralel</span>
+          / \    |    |    |
+      <span class="tree-node">F(2)</span>+<span class="tree-node">F(1)</span> ...  ...   ...       <span class="tree-parallel">← 8 task paralel</span>
+</pre>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">💻 Kode Program - Fibonacci Cilk</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">fibonacci_cilk.c</span>
+            </div>
+            <div class="code-content">
+<pre><span class="type">long long</span> <span class="function">fibonacci_cilk</span>(<span class="type">int</span> n) {
+    <span class="keyword">if</span> (n <= <span class="number">1</span>) <span class="keyword">return</span> n;
+    
+    <span class="type">long long</span> x, y;
+    
+    <span class="pragma">#pragma omp task shared(x)</span>
+    x = <span class="function">fibonacci_cilk</span>(n-<span class="number">1</span>);     <span class="comment">// SPAWN task 1</span>
+    
+    <span class="pragma">#pragma omp task shared(y)</span>
+    y = <span class="function">fibonacci_cilk</span>(n-<span class="number">2</span>);     <span class="comment">// SPAWN task 2</span>
+    
+    <span class="pragma">#pragma omp taskwait</span>         <span class="comment">// SYNC - tunggu selesai</span>
+    
+    <span class="keyword">return</span> x + y;                <span class="comment">// Gabungkan hasil</span>
+}</pre>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">💻 Kode Program - Batch Search Cilk</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">batch_search_cilk.c</span>
+            </div>
+            <div class="code-content">
+<pre><span class="type">void</span> <span class="function">batch_search_cilk</span>(<span class="type">int</span> arr[], <span class="type">int</span> n, 
+                       <span class="type">int</span> targets[], <span class="type">int</span> start, <span class="type">int</span> end, 
+                       <span class="type">int</span> results[]) {
+    <span class="type">int</span> count = end - start;
+    
+    <span class="comment">// Base case: sequential jika batch kecil</span>
+    <span class="keyword">if</span> (count <= THRESHOLD) {
+        <span class="keyword">for</span> (<span class="type">int</span> i = start; i < end; i++) {
+            results[i] = <span class="function">fibonacci_search</span>(arr, n, targets[i]);
+        }
+        <span class="keyword">return</span>;
+    }
+    
+    <span class="comment">// Divide: bagi menjadi 2 bagian</span>
+    <span class="type">int</span> mid = start + count / <span class="number">2</span>;
+    
+    <span class="pragma">#pragma omp task</span>
+    <span class="function">batch_search_cilk</span>(arr, n, targets, start, mid, results);
+    
+    <span class="pragma">#pragma omp task</span>
+    <span class="function">batch_search_cilk</span>(arr, n, targets, mid, end, results);
+    
+    <span class="pragma">#pragma omp taskwait</span>  <span class="comment">// Sync</span>
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Benchmark -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">5</div>
+            <h2 class="card-title">Hasil Benchmark (Eksekusi Aktual)</h2>
+        </div>
+        
+        <div class="info-box warning-box">
+            <span class="info-icon">⚙️</span>
+            <div>
+                <strong>Skenario Test:</strong><br>
+                • Array size: <strong>1,000,000</strong> elemen (sorted)<br>
+                • Jumlah pencarian: <strong>100,000</strong> query<br>
+                • OpenMP threads: <strong>4</strong>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">📊 Hasil Perbandingan Waktu</h3>
+        <table class="result-table">
+            <tr>
+                <th>Metode</th>
+                <th>Waktu</th>
+                <th>Speedup</th>
+                <th>Throughput</th>
+            </tr>
+            <tr>
+                <td><strong>Sequential</strong></td>
+                <td>17.922 ms</td>
+                <td><span class="speedup-badge baseline">1.00x</span></td>
+                <td>5,579,698 /detik</td>
+            </tr>
+            <tr>
+                <td><strong>OpenMP</strong></td>
+                <td>5.750 ms</td>
+                <td><span class="speedup-badge">3.12x</span></td>
+                <td>17,392,342 /detik</td>
+            </tr>
+            <tr>
+                <td><strong>Cilk-style</strong></td>
+                <td>5.441 ms</td>
+                <td><span class="speedup-badge">3.29x</span></td>
+                <td>18,378,660 /detik</td>
+            </tr>
+        </table>
+        
+        <h3 style="margin: 20px 0 10px;">📊 Fibonacci Rekursif F(35)</h3>
+        <table class="result-table">
+            <tr>
+                <th>Metode</th>
+                <th>Hasil</th>
+                <th>Waktu</th>
+            </tr>
+            <tr>
+                <td><strong>Iteratif (DP)</strong></td>
+                <td>9,227,465</td>
+                <td>0.000 ms</td>
+            </tr>
+            <tr>
+                <td><strong>Cilk Rekursif</strong></td>
+                <td>9,227,465</td>
+                <td>27.804 ms</td>
+            </tr>
+        </table>
+        
+        <div class="info-box">
+            <span class="info-icon">📝</span>
+            <div>
+                <strong>Catatan:</strong> Iteratif (DP) JAUH lebih cepat karena O(n), sedangkan rekursif adalah O(2^n). Cilk rekursif digunakan untuk <em>mendemonstrasikan</em> task parallelism, bukan untuk efisiensi.
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Kesimpulan -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">6</div>
+            <h2 class="card-title">Kesimpulan</h2>
+        </div>
+        
+        <div class="conclusion-grid">
+            <div class="conclusion-item">
+                <span class="conclusion-icon">🔢</span>
+                <div class="conclusion-content">
+                    <h4>Deret Fibonacci</h4>
+                    <p>F(n) = F(n-1) + F(n-2)<br>Digunakan untuk pembagian array</p>
+                </div>
+            </div>
+            <div class="conclusion-item">
+                <span class="conclusion-icon">🔍</span>
+                <div class="conclusion-content">
+                    <h4>Fibonacci Search</h4>
+                    <p>O(log n), hanya pakai + dan -<br>Alternatif Binary Search</p>
+                </div>
+            </div>
+            <div class="conclusion-item">
+                <span class="conclusion-icon">⚡</span>
+                <div class="conclusion-content">
+                    <h4>OpenMP</h4>
+                    <p>#pragma omp parallel for<br>Speedup: ~3.12x</p>
+                </div>
+            </div>
+            <div class="conclusion-item">
+                <span class="conclusion-icon">🔀</span>
+                <div class="conclusion-content">
+                    <h4>Cilk</h4>
+                    <p>#pragma omp task<br>Speedup: ~3.29x</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box success-box">
+            <span class="info-icon">✅</span>
+            <div>
+                <strong>Kapan Paralel Berguna?</strong><br>
+                ✓ Data <strong>BESAR</strong> (jutaan elemen)<br>
+                ✓ Query <strong>BANYAK</strong> (ribuan pencarian)<br>
+                ✗ Data kecil: overhead lebih besar dari benefit
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 7: Cara Menjalankan -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-number">7</div>
+            <h2 class="card-title">Cara Menjalankan Program</h2>
+        </div>
+        
+        <h3 style="margin: 10px 0;">📦 Compile</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">Terminal</span>
+            </div>
+            <div class="code-content">
+<pre>gcc -O2 -fopenmp -o fibonacci_search fibonacci_search.c -lm</pre>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">▶️ Run</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot red"></span>
+                <span class="code-dot yellow"></span>
+                <span class="code-dot green"></span>
+                <span class="code-title">Terminal</span>
+            </div>
+            <div class="code-content">
+<pre>./fibonacci_search</pre>
+            </div>
+        </div>
+        
+        <h3 style="margin: 20px 0 10px;">📋 Penjelasan Flag:</h3>
+        <table class="result-table">
+            <tr>
+                <th>Flag</th>
+                <th>Fungsi</th>
+            </tr>
+            <tr>
+                <td><code>-O2</code></td>
+                <td>Optimisasi level 2 (lebih cepat)</td>
+            </tr>
+            <tr>
+                <td><code>-fopenmp</code></td>
+                <td>Aktifkan OpenMP untuk parallelism</td>
+            </tr>
+            <tr>
+                <td><code>-lm</code></td>
+                <td>Link math library</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p><strong>Fibonacci Search dengan OpenMP &amp; Cilk</strong></p>
+        <p>© 2025 - Studi Kasus Parallelism</p>
+    </div>
+</div>
+
+</body>
+</html>
